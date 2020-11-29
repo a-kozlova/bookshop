@@ -3,20 +3,21 @@ package com.kozlova.bookshop.entity;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.kozlova.bookshop.validator.CustomerValidator;
+import com.kozlova.bookshop.validator.CashValidator;
 import com.kozlova.bookshop.validator.Validator;
 
-public class Customer implements User {
+public class Customer implements User<Book> {
     private String name;
     private double cash;
     private List<Book> bookCollection;
+    private boolean isOwner = false;
     private final Validator<Double> validator;
 
     public Customer(String name) {
         this.name = name;
         this.cash = 0;
         this.bookCollection = new ArrayList<>();
-        this.validator = new CustomerValidator();
+        this.validator = new CashValidator();
     }
 
     @Override
@@ -36,34 +37,46 @@ public class Customer implements User {
 
     @Override
     public void setCash(double cash) {
-        validator.validate(cash);
         this.cash = cash;
+        validator.validate(this.cash);
+    }
+    
+    @Override
+    public boolean getIsOwner() {
+        return isOwner;
+    }
+    
+    @Override
+    public void setIsOwner(boolean isOwner) {
+        this.isOwner = isOwner;
     }
 
     @Override
-    public List<Book> getBookCollection() {
+    public List<Book> getCollection() {
         return bookCollection;
     }
 
-    public void addAllBooksToCollection(List<Book> collection) {
+    @Override
+    public void addAll(List<Book> collection) {
         this.bookCollection.addAll(collection);
     }
 
     @Override
-    public void buyBookByShop(String title, Shop shop) {
+    public void addItem(Book book) {
+        this.bookCollection.add(book);
+    }
+
+    @Override
+    public void buyItemByShop(String title, Shop shop) {
         Book book = shop.getBookByTitle(title);
         pay(book.getPrice());
         shop.sale(book);
-        addBookToCollection(book);
+        addItem(book);
     }
 
     private void pay(double price) {
         this.cash -= price;
         validator.validate(Double.valueOf(cash));
-    }
-
-    private void addBookToCollection(Book book) {
-        this.bookCollection.add(book);
     }
 
 }

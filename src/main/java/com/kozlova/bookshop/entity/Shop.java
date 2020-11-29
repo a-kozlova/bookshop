@@ -2,7 +2,7 @@ package com.kozlova.bookshop.entity;
 
 import java.util.List;
 
-public interface Shop {
+public interface Shop{
 
     String getName();
     

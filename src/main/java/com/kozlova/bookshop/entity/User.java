@@ -2,8 +2,8 @@ package com.kozlova.bookshop.entity;
 
 import java.util.List;
 
-public interface User {
-
+public interface User<T> {
+    
     String getName();
 
     void setName(String name);
@@ -12,8 +12,16 @@ public interface User {
 
     void setCash(double cash);
     
-    void buyBookByShop(String title, Shop shop);
+    boolean getIsOwner();
+    
+    void setIsOwner(boolean isOwner);
+    
+    void buyItemByShop(String title, Shop shop);
 
-    List<Book> getBookCollection();
+    List<Book> getCollection();
+    
+    void addAll(List<T> collection);
+    
+    void addItem(T item);
 
 }

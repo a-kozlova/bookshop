@@ -8,7 +8,7 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import com.kozlova.bookshop.exception.BookNotFoundException;
-import com.kozlova.bookshop.validator.IsbnValidator;
+import com.kozlova.bookshop.validator.BookValidator;
 import com.kozlova.bookshop.validator.Validator;
 
 public class BookShop implements Shop {
@@ -21,7 +21,7 @@ public class BookShop implements Shop {
         this.name = name;
         this.sales = 0;
         this.books = new LinkedList<>();
-        this.validator = new IsbnValidator();
+        this.validator = new BookValidator();
     }
 
     @Override
@@ -51,7 +51,7 @@ public class BookShop implements Shop {
 
     @Override
     public void addBooks(List<Book> books) {
-        books.addAll(books);
+        this.books.addAll(books);
     }
 
     @Override
@@ -62,7 +62,9 @@ public class BookShop implements Shop {
 
     @Override
     public Book getBookByTitle(String title) {
-        Optional<Book> optBook = books.stream().filter(b -> title.equals(b.getTitle())).findFirst();
+        Optional<Book> optBook = books.stream()
+                                      .filter(b -> title.equals(b.getTitle()))
+                                      .findFirst();
         if (optBook.isPresent()) {
             return optBook.get();
         } else {
@@ -100,15 +102,11 @@ public class BookShop implements Shop {
             return false;
         }
         
-        if(this.books.size() != otherShop.getBooks().size()) {
-            return false;
-        }
-        
-        HashSet<Book> bo = books.stream().collect(Collectors.toCollection(HashSet::new));
+        HashSet<Book> thisBooks = books.stream().collect(Collectors.toCollection(HashSet::new));
         HashSet<Book> otherBooks = ((BookShop) otherShop).getBooks().stream()
                 .collect(Collectors.toCollection(HashSet::new));
 
-        return bo.equals(otherBooks);
+        return thisBooks.equals(otherBooks);
     }
 
 }

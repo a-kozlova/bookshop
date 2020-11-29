@@ -8,14 +8,44 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.Test;
 
 import com.kozlova.bookshop.entity.Book;
+import com.kozlova.bookshop.exception.BookNotFoundException;
 import com.kozlova.bookshop.exception.IllegalIsbnException;
+import com.kozlova.bookshop.exception.InvalidFieldException;
 
-class IsbnValidatorTest {
-    private Validator<Book> validator = new IsbnValidator();
+class BookValidatorTest {
+    private Validator<Book> validator = new BookValidator();
 
     @Test
+    void validateShouldThrowExceptionIfBookIsNull() {
+        BookNotFoundException thrown = assertThrows(BookNotFoundException.class,
+                () -> validator.validate(null));
+
+        assertThat(thrown.getMessage(), equalTo("Book is null"));
+    }
+    
+    @Test
+    void validateShouldThrowExceptionIfPriceNegative() {
+        Book book = Book.builder().withPages(11).withPrice(-1).withIsbn(null).build();
+
+        InvalidFieldException thrown = assertThrows(InvalidFieldException.class,
+                () -> validator.validate(book));
+
+        assertThat(thrown.getMessage(), equalTo("Book cannot have negative price"));
+    }
+    
+    @Test
+    void validateShouldThrowExceptionIfPagesNotPositive() {
+        Book book = Book.builder().withPages(0).withPrice(13).withIsbn(null).build();
+
+        InvalidFieldException thrown = assertThrows(InvalidFieldException.class,
+                () -> validator.validate(book));
+
+        assertThat(thrown.getMessage(), equalTo("Book cannot have pages equal or less than 0"));
+    }
+    
+    @Test
     void validateShouldThrowExceptionIfIsbnIsNull() {
-        Book book = Book.builder().withIsbn(null).build();
+        Book book = Book.builder().withPages(11).withPrice(13).withIsbn(null).build();
 
         IllegalIsbnException thrown = assertThrows(IllegalIsbnException.class,
                 () -> validator.validate(book));
@@ -25,7 +55,7 @@ class IsbnValidatorTest {
 
     @Test
     void validateShouldThrowExceptionIfIsbnIsEmptyString() {
-        Book book = Book.builder().withIsbn("").build();
+        Book book = Book.builder().withPages(11).withPrice(13).withIsbn("").build();
 
         IllegalIsbnException thrown = assertThrows(IllegalIsbnException.class,
                 () -> validator.validate(book));
@@ -35,7 +65,7 @@ class IsbnValidatorTest {
     
     @Test
     void validateShouldThrowExceptionIfIsbnHasWrongDigitAmount() {
-        Book book = Book.builder().withIsbn("978-384135180").build();
+        Book book = Book.builder().withPages(11).withPrice(13).withIsbn("978-384135180").build();
 
         IllegalIsbnException thrown = assertThrows(IllegalIsbnException.class,
                 () -> validator.validate(book));
@@ -46,7 +76,7 @@ class IsbnValidatorTest {
     @Test
     void validateShouldThrowExceptionIfIsbnIsWrong() {
         String invalidIsbn = "978-3442261747";
-        Book book = Book.builder().withIsbn(invalidIsbn).build();
+        Book book = Book.builder().withPages(11).withPrice(13).withIsbn(invalidIsbn).build();
 
         IllegalIsbnException thrown = assertThrows(IllegalIsbnException.class,
                 () -> validator.validate(book));
@@ -57,7 +87,7 @@ class IsbnValidatorTest {
     @Test
     void validateShouldThrowNoExceptionsIfIsbnIsCorrect() {
         String validIsbn = "978-3841335180";
-        Book book = Book.builder().withIsbn(validIsbn).build();
+        Book book = Book.builder().withPages(11).withPrice(13).withIsbn(validIsbn).build();
         validator.validate(book);
 
         assertAll(() -> validator.validate(book));

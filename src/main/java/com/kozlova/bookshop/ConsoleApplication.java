@@ -1,5 +1,6 @@
 package com.kozlova.bookshop;
 
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Scanner;
@@ -10,57 +11,55 @@ import com.kozlova.bookshop.entity.Customer;
 import com.kozlova.bookshop.entity.Genre;
 import com.kozlova.bookshop.entity.Shop;
 import com.kozlova.bookshop.entity.User;
-
+import com.kozlova.bookshop.service.DataService;
 
 public class ConsoleApplication {
 
-    private static final String FORMAT = "%d: %s";
+    private static final String ACTION_SEPARATOR_LINE = "----------------------------------------------------------------";
+    private static final String HEADER_LINE = "################################################################";
+    private static final String INTERACTION_FORMAT = "%d: %s";
     private static final int EXIT_CODE = 0;
+
+    private static final String[] appInteractions = { "Exit",
+                                                      "Go to shop", 
+                                                      "Login as owner" };
+    private static final String[] shopInteractions = { "Back to start", 
+                                                       "Show all books",
+                                                       "Filter books by genre", 
+                                                       "Buy a book", 
+                                                       "Compare books with another shop",
+                                                       "Add book to shop" };
+    private static final String[] genres = { Genre.ADVENTURE.toString(), 
+                                             Genre.BIOGRAPHY.toString(),
+                                             Genre.COMIC.toString(), 
+                                             Genre.FANTASY.toString() };
 
     public static void main(String[] args) {
         List<Shop> shops = createShops();
 
         try (Scanner scanner = new Scanner(System.in)) {
-            User customer = createUser(scanner);
+            User<Book> customer = createUser(scanner);
 
-            List<String> appInteractions = new LinkedList<>();
-            appInteractions.add("Exit");
-            appInteractions.add("Go to shop as customer");
-            appInteractions.add("Go to shop as owner");
-
-            int actionNumber = 1;
-            while (actionNumber != EXIT_CODE) {
-                showInteractions(appInteractions);
-                actionNumber = userChoice(scanner);
-
+            int actionNumber;
+            do {
+                showSelection(appInteractions);
+                actionNumber = userChoice(scanner, 0, appInteractions.length);
                 if (actionNumber == 1) {
                     interactWithShops(shops, scanner, customer);
                 } else if (actionNumber == 2) {
+                    System.out.println("Authentification process ...");
+                    customer.setIsOwner(true);
                     interactWithShops(shops, scanner, customer);
-                } else if (actionNumber == EXIT_CODE) {
-                    System.out.println("Bye!");
-                    System.exit(0);
-                } else {
-                    System.out.println(String.format("Unknown input %d. Try again", actionNumber));
                 }
-            }
+
+            } while (actionNumber != EXIT_CODE);
+
+            System.out.println("Bye!");
 
         } catch (Exception e) {
-            e.getMessage();
+            System.out.println(e.getMessage());
         }
 
-    }
-
-    private static User createUser(Scanner scanner) {
-        System.out.println("Enter your name: ");
-        String name = scanner.nextLine();
-        User customer = new Customer(name);
-
-        System.out.println("Enter your account balance: ");
-        double cash = scanner.nextDouble();
-        scanner.nextLine();
-        customer.setCash(cash);
-        return customer;
     }
 
     private static List<Shop> createShops() {
@@ -70,116 +69,171 @@ public class ConsoleApplication {
         Shop bookSellers = new BookShop("BookSellers");
         Shop rareBooks = new BookShop("Rare Books");
         Shop fantasyShop = new BookShop("Fantasy Books");
-        amazon.addBooks(createBooks());
         shops.add(amazon);
         shops.add(bookStore);
         shops.add(bookSellers);
         shops.add(rareBooks);
         shops.add(fantasyShop);
+
+        amazon.addBooks(loadBooks("src/main/resources/amazonbooks.json"));
+        bookStore.addBooks(loadBooks("src/main/resources/amazonbooks.json"));
+        bookSellers.addBooks(loadBooks("src/main/resources/booksellerbooks.json"));
+        rareBooks.addBooks(loadBooks("src/main/resources/rarebooks.json"));
+        fantasyShop.addBooks(loadBooks("src/main/resources/fantasybooks.json"));
+
         return shops;
     }
 
-    private static List<Book> createBooks() {
+    private static List<Book> loadBooks(String source) {
         List<Book> books = new LinkedList<>();
 
-        Book book1 = Book.builder().withTitle("Test1").withPrice(22.2).withPages(300).withGenre(Genre.ADVENTURE)
-                .withIsbn("978-3608963762").build();
-        Book book2 = Book.builder().withTitle("Test2").withPrice(22.2).withPages(300).withGenre(Genre.BIOGRAPHY)
-                .withIsbn("978-3608963762").build();
-        Book book3 = Book.builder().withTitle("Test3").withPrice(22.2).withPages(300).withGenre(Genre.COMIC)
-                .withIsbn("978-3608963762").build();
-        Book book4 = Book.builder().withTitle("Test4").withPrice(22.2).withPages(300).withGenre(Genre.FANTASY)
-                .withIsbn("978-3608963762").build();
-        Book book5 = Book.builder().withTitle("Test5").withPrice(22.2).withPages(300).withGenre(Genre.ADVENTURE)
-                .withIsbn("978-3608963762").build();
-        books.add(book1);
-        books.add(book2);
-        books.add(book3);
-        books.add(book4);
-        books.add(book5);
+        try {
+            books = DataService.getBooksFrom(source);
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+        }
+
         return books;
     }
 
-    private static void interactWithShops(List<Shop> shops, Scanner scanner, User customer) {
+    private static User<Book> createUser(Scanner scanner) {
+        System.out.println("Enter your name: ");
+        String name = scanner.nextLine();
+        User<Book> customer = new Customer(name);
 
-        System.out.println("\nChoose the number of the shop you want to visit");
-        showAllShops(shops);
-        int shopNumber = userChoice(scanner);
-        Shop choosenShop = chooseShop(shops, shopNumber - 1);
+        System.out.println("Enter your account balance: ");
+        double cash = scanner.nextDouble();
+        scanner.nextLine();
+        customer.setCash(cash);
 
-        System.out.println(String.format("\nYou have chosen %s", choosenShop.getName()));
-        System.out.println("\nChoose the action: ");
-        List<String> shopInteractions = new LinkedList<>();
-        shopInteractions.add("Exit");
-        shopInteractions.add("Show all books");
-        shopInteractions.add("Select books by genre");
-        shopInteractions.add("Buy a book");
-        shopInteractions.add("Compare books with another shop");
-        shopInteractions.add("Go to another shop");
-        showInteractions(shopInteractions);
-        int shopInteractionNumber = userChoice(scanner);
+        System.out.println("Welcome, " + customer.getName());
+        System.out.println(HEADER_LINE);
 
-        if (shopInteractionNumber == 1) {
-            choosenShop.showAllBooksWithoutDuplicates();
-        } else if (shopInteractionNumber == 2) {
-            filterByGenre(scanner, choosenShop);
-        } else if (shopInteractionNumber == 3) {
-            buy(scanner, customer, choosenShop);
+        return customer;
+    }
 
-        } else if (shopInteractionNumber == 4) {
-            // compareShops();
-        } else if (shopInteractionNumber == 5) {
-            interactWithShops(shops, scanner, customer);
-
-        } else if (shopInteractionNumber == EXIT_CODE) {
-            System.out.println("Bye!");
-            System.exit(0);
-        } else {
-            System.out.println("Invalid command");
+    private static void showSelection(String[] interactions) {
+        System.out.println(ACTION_SEPARATOR_LINE);
+        for (int i = 0; i < interactions.length; i++) {
+            System.out.println(String.format(INTERACTION_FORMAT, i, interactions[i]));
         }
+
+        System.out.println(ACTION_SEPARATOR_LINE);
     }
 
-    private static void filterByGenre(Scanner scanner, Shop choosenShop) {
-        System.out.println("Choose the genre: ");
-
-        List<String> genres = new LinkedList<>();
-        genres.add(Genre.ADVENTURE.toString());
-        genres.add(Genre.BIOGRAPHY.toString());
-        genres.add(Genre.COMIC.toString());
-        genres.add(Genre.FANTASY.toString());
-        showInteractions(genres);
-        int genreNumber = userChoice(scanner);
-        System.out.println(Genre.valueOf(genreNumber));
-        choosenShop.showBooksFilteredBy(Genre.valueOf(genreNumber));
-    }
-
-    private static void buy(Scanner scanner, User customer, Shop choosenShop) {
-        System.out.println("Enter the title of the book: ");
-        String title = scanner.nextLine();
-        customer.buyBookByShop(title, choosenShop);
-    }
-
-    private static void showInteractions(List<String> interactions) {
-        for (int i = 0; i < interactions.size(); i++) {
-            System.out.println(String.format(FORMAT, i, interactions.get(i)));
-        }
-    }
-
-    private static int userChoice(Scanner scanner) {
+    private static int userChoice(Scanner scanner, int from, int to) {
         int choice = scanner.nextInt();
         scanner.nextLine();
+
+        while (choice > to || choice < from) {
+            System.out.println(choice + " - Unknown command. Please try again");
+            choice = scanner.nextInt();
+            scanner.nextLine();
+        }
+
         return choice;
     }
 
-    private static Shop chooseShop(List<Shop> shops, int shopNumber) {
-        return shops.get(shopNumber);
+    private static void interactWithShops(List<Shop> shops, Scanner scanner, User<Book> customer) {
+        Shop shop = selectShop(shops, scanner);
+
+        System.out.println(HEADER_LINE);
+        System.out.println(String.format("Welcome to %s %nSelect action: ", shop.getName()));
+
+        int shopInteractionNumber;
+        do {
+            showSelection(shopInteractions);
+            shopInteractionNumber = userChoice(scanner, 0, shopInteractions.length);
+            if (shopInteractionNumber == 1) {
+                showAllBooks(shop);
+            } else if (shopInteractionNumber == 2) {
+                filterByGenre(scanner, shop);
+            } else if (shopInteractionNumber == 3) {
+                buy(scanner, customer, shop);
+            } else if (shopInteractionNumber == 4) {
+                compareShops(shop, shops, scanner);
+            } else if (shopInteractionNumber == 5 && customer.getIsOwner()) {
+                addBookToShop(shop, scanner);
+            } else {
+                System.out.println("Access denied");
+            }
+        } while (shopInteractionNumber != EXIT_CODE);
+
     }
 
-    public static void showAllShops(List<Shop> shops) {
-        for (int i = 0; i < shops.size(); i++) {
-            System.out.println(String.format(FORMAT, i + 1, shops.get(i).getName()));
+    private static Shop selectShop(List<Shop> shops, Scanner scanner) {
+        System.out.println(ACTION_SEPARATOR_LINE);
+        System.out.println("Enter the number of the shop");
+        for (int i = 1; i <= shops.size(); i++) {
+            System.out.println(String.format(INTERACTION_FORMAT, i, shops.get(i - 1).getName()));
         }
 
+        int shopNumber = userChoice(scanner, 1, shops.size());
+
+        return shops.get(shopNumber - 1);
+    }
+    
+    private static void showAllBooks(Shop shop) {
+        System.out.println(shop.getName() + " has following books:");
+        shop.showAllBooksWithoutDuplicates();
+    }
+
+    private static void filterByGenre(Scanner scanner, Shop shop) {
+        Genre genre = selectGenre(scanner);
+
+        System.out.println(shop.getName() + " has following books:");
+        shop.showBooksFilteredBy(genre);
+    }
+
+    private static Genre selectGenre(Scanner scanner) {
+        System.out.println("Select genre: ");
+        showSelection(genres);
+        int genreNumber = userChoice(scanner, 0, genres.length);
+        return Genre.valueOf(genreNumber);
+    }
+
+    private static void buy(Scanner scanner, User<Book> customer, Shop shop) {
+        System.out.println("Enter the title of the book: ");
+        String title = scanner.nextLine();
+        customer.buyItemByShop(title, shop);
+        System.out.println(title + " was bought");
+    }
+
+    private static void compareShops(Shop shop, List<Shop> shops, Scanner scanner) {
+        System.out.println(String.format("You are in %s. What other shop would you compate to? ",
+                shop.getName()));
+        
+        Shop otherShop = selectShop(shops, scanner);
+        boolean isEqual = shop.compareBooksTo(otherShop);
+        if (isEqual) {
+            System.out.println("Books in both shops are equal");
+        } else {
+            System.out.println(String.format("There are different books in %s and %s",
+                    shop.getName(), otherShop.getName()));
+        }
+    }
+
+    private static void addBookToShop(Shop shop, Scanner scanner) {
+        System.out.println("Enter book title:");
+        String title = scanner.nextLine();
+        
+        System.out.println("Enter pages:");
+        int pages = scanner.nextInt();
+        scanner.nextLine();
+        
+        System.out.println("Enter price:");
+        double price = scanner.nextDouble();
+        scanner.nextLine();
+        
+        System.out.println("Enter ISBN:");
+        String isbn = scanner.nextLine();
+        
+        Genre genre = selectGenre(scanner);
+
+        Book book = Book.builder().withTitle(title).withPrice(price).withPages(pages)
+                .withGenre(genre).withIsbn(isbn).build();
+        shop.addNewBook(book);
+        System.out.println("Book was successfully added");
     }
 
 }

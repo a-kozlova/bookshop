@@ -1,11 +1,15 @@
 package com.kozlova.bookshop.entity;
 
+import com.kozlova.bookshop.validator.BookValidator;
+import com.kozlova.bookshop.validator.Validator;
+
 public class Book implements Comparable<Book> {
     private String title;
     private double price;
     private int pages;
     private Genre genre;
     private String isbn;
+    private final Validator<Book> validator;
 
     private Book(Builder builder) {
         this.title = builder.title;
@@ -13,6 +17,7 @@ public class Book implements Comparable<Book> {
         this.pages = builder.pages;
         this.genre = builder.genre;
         this.isbn = builder.isbn;
+        this.validator = new BookValidator();
     }
 
     public String getTitle() {
@@ -29,6 +34,7 @@ public class Book implements Comparable<Book> {
 
     public void setPrice(double price) {
         this.price = price;
+        validator.validate(this);
     }
 
     public int getPages() {
@@ -37,6 +43,7 @@ public class Book implements Comparable<Book> {
 
     public void setPages(int pages) {
         this.pages = pages;
+        validator.validate(this);
     }
 
     public Genre getGenre() {
@@ -71,32 +78,25 @@ public class Book implements Comparable<Book> {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (obj == null)
+        }
+        if (obj == null || getClass() != obj.getClass()){
             return false;
-        if (getClass() != obj.getClass())
-            return false;
+        }
+
         Book other = (Book) obj;
-        if (isbn == null) {
-            if (other.isbn != null)
-                return false;
-        } else if (!isbn.equals(other.isbn))
-            return false;
-        if (title == null) {
-            if (other.title != null)
-                return false;
-        } else if (!title.equals(other.title))
-            return false;
-        if (pages != other.pages)
-            return false;
-        return true;
+        return isbn.equals(other.isbn) &&
+               title.equals(other.title) &&
+               genre == other.genre &&
+               pages == other.pages &&
+               price == other.price;
     }
     
     @Override
     public String toString() {
-        return String.format("%s: %s%nISBN: %s%n%d Pages, %n%f Euro", this.title, this.genre.toString(), 
-                this.isbn, this.pages, this.price);
+        return String.format("**********%n%s: %s%nISBN: %s%nPages: %d %nPrice: %f Euro",
+                this.title, this.genre.toString(), this.isbn, this.pages, this.price);
     }
     
 

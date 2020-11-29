@@ -1,10 +1,12 @@
 package com.kozlova.bookshop.entity;
 
+import com.kozlova.bookshop.exception.GenreTypeException;
+
 public enum Genre {
     ADVENTURE, BIOGRAPHY, COMIC, FANTASY;
 
-    public static Genre valueOf(int genreNumber) {
-        switch (genreNumber) {
+    public static Genre valueOf(int index) {
+        switch (index) {
         case 0:
             return ADVENTURE;
         case 1:
@@ -14,7 +16,7 @@ public enum Genre {
         case 3:
             return FANTASY;
         default:
-            throw new RuntimeException("Enum exception");    
+            throw new GenreTypeException("This genre is not defined");    
         }
         
     }
