@@ -1,2 +1,2 @@
 # bookshop
-This is an implementation of a simple console app foor book shops 
+This is an implementation of a simple console app for book shops 
